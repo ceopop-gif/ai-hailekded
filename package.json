@@ -1,0 +1,25 @@
+{
+  "name": "ai-hailekded",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vinext dev",
+    "build": "vinext build",
+    "start": "vinext start",
+    "test": "node tests/smoke.mjs"
+  },
+  "dependencies": {
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-server-dom-webpack": "^19.2.6",
+    "vinext": "^0.1.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.30.0",
+    "@vitejs/plugin-react": "^6.0.0",
+    "@vitejs/plugin-rsc": "^0.5.18",
+    "vite": "^8.0.0",
+    "wrangler": "^4.69.0"
+  }
+}
