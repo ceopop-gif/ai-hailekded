@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+const SOUND_STORAGE_KEY = "lucky_sound_enabled";
 
 const MENU_ITEMS = [
   {
@@ -174,6 +176,32 @@ function readLocal(key, fallback) {
 function writeLocal(key, value) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(key, JSON.stringify(value));
+}
+
+function playTone(audioContext, frequency, startOffset, duration, volume) {
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  const startAt = audioContext.currentTime + startOffset;
+  const stopAt = startAt + duration;
+
+  oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(frequency, startAt);
+  oscillator.frequency.exponentialRampToValueAtTime(frequency * 1.08, stopAt);
+  gain.gain.setValueAtTime(0.0001, startAt);
+  gain.gain.exponentialRampToValueAtTime(volume, startAt + 0.008);
+  gain.gain.exponentialRampToValueAtTime(0.0001, stopAt);
+  oscillator.connect(gain);
+  gain.connect(audioContext.destination);
+  oscillator.start(startAt);
+  oscillator.stop(stopAt + 0.01);
+  oscillator.addEventListener(
+    "ended",
+    () => {
+      oscillator.disconnect();
+      gain.disconnect();
+    },
+    { once: true }
+  );
 }
 
 function NumberResult({ result, title, note, onSave, onShare }) {
@@ -1025,13 +1053,103 @@ export default function LuckyNumberApp() {
   const [view, setView] = useState("home");
   const [history, setHistory] = useState([]);
   const [toast, setToast] = useState("");
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const appShellRef = useRef(null);
+  const audioContextRef = useRef(null);
 
   useEffect(() => {
     setHistory(readLocal("lucky_number_history", []));
+    setSoundEnabled(readLocal(SOUND_STORAGE_KEY, true) !== false);
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
       navigator.serviceWorker.register("/sw.js").catch(() => undefined);
     }
   }, []);
+
+  const playButtonSound = useCallback(
+    (kind = "tap", force = false) => {
+      if (!soundEnabled && !force) return;
+
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+
+      try {
+        if (!audioContextRef.current || audioContextRef.current.state === "closed") {
+          audioContextRef.current = new AudioContextClass();
+        }
+
+        const audioContext = audioContextRef.current;
+        if (audioContext.state === "suspended") {
+          audioContext.resume().catch(() => undefined);
+        }
+
+        if (kind === "magic") {
+          playTone(audioContext, 523.25, 0, 0.1, 0.075);
+          playTone(audioContext, 783.99, 0.045, 0.13, 0.052);
+        } else if (kind === "toggle") {
+          playTone(audioContext, 659.25, 0, 0.11, 0.065);
+        } else {
+          playTone(audioContext, 440, 0, 0.075, 0.045);
+        }
+      } catch {
+        // Some embedded browsers block Web Audio. Buttons still work normally.
+      }
+    },
+    [soundEnabled]
+  );
+
+  useEffect(() => {
+    const shell = appShellRef.current;
+    if (!shell) return undefined;
+
+    const handleButtonClick = (event) => {
+      const button = event.target instanceof Element ? event.target.closest("button") : null;
+      if (!button || !shell.contains(button) || button.disabled) return;
+
+      const isSoundToggle = button.dataset.soundToggle === "true";
+      const isMagicAction = button.matches(".menu-card, .primary-button");
+      playButtonSound(
+        isSoundToggle ? "toggle" : isMagicAction ? "magic" : "tap",
+        isSoundToggle && !soundEnabled
+      );
+
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!reduceMotion) {
+        const bounds = button.getBoundingClientRect();
+        const burst = document.createElement("span");
+        const x = event.clientX || bounds.left + bounds.width / 2;
+        const y = event.clientY || bounds.top + bounds.height / 2;
+
+        burst.className = isMagicAction ? "tap-burst magic" : "tap-burst";
+        burst.style.left = `${x}px`;
+        burst.style.top = `${y}px`;
+        burst.setAttribute("aria-hidden", "true");
+        document.body.appendChild(burst);
+        burst.addEventListener("animationend", () => burst.remove(), { once: true });
+        window.setTimeout(() => burst.remove(), 700);
+
+        button.classList.remove("is-tapped");
+        window.requestAnimationFrame(() => button.classList.add("is-tapped"));
+        window.setTimeout(() => button.classList.remove("is-tapped"), 430);
+      }
+
+      if (isMagicAction && typeof navigator.vibrate === "function") {
+        navigator.vibrate(8);
+      }
+    };
+
+    shell.addEventListener("click", handleButtonClick);
+    return () => shell.removeEventListener("click", handleButtonClick);
+  }, [playButtonSound, soundEnabled]);
+
+  useEffect(
+    () => () => {
+      const audioContext = audioContextRef.current;
+      if (audioContext && audioContext.state !== "closed") {
+        audioContext.close().catch(() => undefined);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1040,6 +1158,13 @@ export default function LuckyNumberApp() {
   const notify = (message) => {
     setToast(message);
     window.setTimeout(() => setToast(""), 2300);
+  };
+
+  const toggleSound = () => {
+    const nextValue = !soundEnabled;
+    setSoundEnabled(nextValue);
+    writeLocal(SOUND_STORAGE_KEY, nextValue);
+    notify(nextValue ? "เปิดเสียงเอฟเฟกต์แล้ว" : "ปิดเสียงเอฟเฟกต์แล้ว");
   };
 
   const saveResult = (title, result, context = "") => {
@@ -1075,7 +1200,7 @@ export default function LuckyNumberApp() {
   const title = view === "history" ? "เลขที่บันทึก" : VIEW_META[view]?.label;
 
   return (
-    <main className="app-shell">
+    <main className="app-shell" ref={appShellRef}>
       <div className="ambient ambient-one" />
       <div className="ambient ambient-two" />
 
@@ -1093,15 +1218,28 @@ export default function LuckyNumberApp() {
           <strong>{view === "home" ? "AI ให้เลขเด็ด" : title}</strong>
           <span>{view === "home" ? "Lucky Number Studio" : "ระบบทำนายเลข"}</span>
         </div>
-        <button
-          className={view === "history" ? "topbar-button active" : "topbar-button"}
-          type="button"
-          onClick={() => setView("history")}
-          aria-label="ดูเลขที่บันทึก"
-        >
-          ♡
-          {history.length ? <span className="history-count">{history.length}</span> : null}
-        </button>
+        <div className="topbar-actions">
+          <button
+            className={soundEnabled ? "topbar-button sound-toggle active" : "topbar-button sound-toggle"}
+            type="button"
+            onClick={toggleSound}
+            aria-label={soundEnabled ? "ปิดเสียงเอฟเฟกต์" : "เปิดเสียงเอฟเฟกต์"}
+            aria-pressed={soundEnabled}
+            data-sound-toggle="true"
+            title={soundEnabled ? "ปิดเสียง" : "เปิดเสียง"}
+          >
+            <span aria-hidden="true">{soundEnabled ? "🔊" : "🔇"}</span>
+          </button>
+          <button
+            className={view === "history" ? "topbar-button active" : "topbar-button"}
+            type="button"
+            onClick={() => setView("history")}
+            aria-label="ดูเลขที่บันทึก"
+          >
+            ♡
+            {history.length ? <span className="history-count">{history.length}</span> : null}
+          </button>
+        </div>
       </header>
 
       <div className="content-area">
