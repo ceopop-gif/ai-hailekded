@@ -10,6 +10,7 @@ const hosting = JSON.parse(
   await readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8")
 );
 const viteConfig = await readFile(new URL("../vite.config.ts", import.meta.url), "utf8");
+const serviceWorker = await readFile(new URL("../public/sw.js", import.meta.url), "utf8");
 const wrangler = JSON.parse(
   (await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"))
     .replace(/^\s*\/\/.*$/gm, "")
@@ -51,9 +52,22 @@ assert.ok(
 assert.equal((page.match(/onRead=/g) || []).length, 6, "Every prediction result needs a replay button");
 assert.ok(page.includes("อ่านเลขออกเสียง"), "Missing visible replay control for result numbers");
 assert.ok(page.includes("ทดสอบเสียงภาษาไทย"), "Missing direct Thai voice test");
+assert.ok(page.includes("openExternalBrowser"), "LINE links must offer an external-browser speech path");
+assert.ok(page.includes("isLineInAppBrowser"), "Missing LINE in-app browser detection");
+assert.ok(page.includes("audioContext.resume().then(startTone)"), "Web Audio must start after in-app audio unlock");
+assert.ok(page.includes("เหตุผลที่ได้เลขชุดนี้"), "Prediction results must explain why numbers were generated");
+assert.ok(
+  (page.match(/addNumberExplanation\(/g) || []).length >= 7,
+  "All six prediction modes must attach traceable explanations"
+);
+assert.ok(page.includes(".slice(0, 5)"), "Two-digit guidance must be limited to five sets");
+assert.ok(page.includes(".slice(0, 3)"), "Three-digit guidance must be limited to three sets");
 assert.ok(css.includes(".tap-burst"), "Missing visual tap effect");
 assert.ok(css.includes(".read-result-button"), "Missing replay button styling");
 assert.ok(css.includes(".voice-test-button"), "Missing visible speech diagnostic control");
+assert.ok(css.includes(".external-browser-button"), "Missing LINE external-browser action styling");
+assert.ok(css.includes(".reason-panel"), "Missing number explanation styling");
+assert.ok(serviceWorker.includes('ai-hailekded-v2'), "Service worker cache must refresh the LINE-compatible build");
 assert.ok(css.includes("@media (prefers-reduced-motion: reduce)"), "Missing reduced-motion support");
 assert.equal(manifest.display, "standalone", "PWA should open as a standalone app");
 assert.ok(hosting.project_id.startsWith("appgprj_"), "Missing Sites project binding");
@@ -61,4 +75,4 @@ assert.ok(viteConfig.includes("cloudflare({"), "Missing Cloudflare Worker build 
 assert.equal(wrangler.main, "vinext/server/app-router-entry", "Missing vinext Worker entry");
 assert.equal(wrangler.name, "server", "Sites Worker output must use the server target");
 
-console.log("Smoke checks passed: 6 menus, Thai speech, sound effects, disclosures, PWA, accessibility, and Worker hosting config.");
+console.log("Smoke checks passed: 6 explained prediction modes, LINE speech fallback, sound effects, disclosures, PWA, accessibility, and Worker hosting config.");
