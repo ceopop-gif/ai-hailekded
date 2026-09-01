@@ -37,7 +37,14 @@ assert.ok(!page.includes("dangerouslySetInnerHTML"), "Untrusted content must rem
 assert.ok(page.includes("window.AudioContext"), "Missing Web Audio button feedback");
 assert.ok(page.includes("lucky_sound_enabled"), "Sound preference must persist on the device");
 assert.ok(page.includes('data-sound-toggle="true"'), "Missing accessible sound toggle");
+assert.ok(page.includes("speechSynthesis"), "Missing spoken Thai button feedback");
+assert.ok(page.includes("SpeechSynthesisUtterance"), "Missing browser speech utterance support");
+assert.ok(page.includes('utterance.lang = "th-TH"'), "Spoken feedback must request a Thai voice");
+assert.ok(page.includes("THAI_DIGIT_WORDS"), "Result numbers must be pronounced digit by digit");
+assert.equal((page.match(/onRead=/g) || []).length, 6, "Every prediction result needs a replay button");
+assert.ok(page.includes("อ่านเลขออกเสียง"), "Missing visible replay control for result numbers");
 assert.ok(css.includes(".tap-burst"), "Missing visual tap effect");
+assert.ok(css.includes(".read-result-button"), "Missing replay button styling");
 assert.ok(css.includes("@media (prefers-reduced-motion: reduce)"), "Missing reduced-motion support");
 assert.equal(manifest.display, "standalone", "PWA should open as a standalone app");
 assert.ok(hosting.project_id.startsWith("appgprj_"), "Missing Sites project binding");
@@ -45,4 +52,4 @@ assert.ok(viteConfig.includes("cloudflare({"), "Missing Cloudflare Worker build 
 assert.equal(wrangler.main, "vinext/server/app-router-entry", "Missing vinext Worker entry");
 assert.equal(wrangler.name, "server", "Sites Worker output must use the server target");
 
-console.log("Smoke checks passed: 6 menus, sound effects, disclosures, PWA, accessibility, and Worker hosting config.");
+console.log("Smoke checks passed: 6 menus, Thai speech, sound effects, disclosures, PWA, accessibility, and Worker hosting config.");
