@@ -64,23 +64,40 @@ const THAI_DAYS = [
 ];
 
 const DREAM_SYMBOLS = [
-  { words: ["งู", "พญานาค"], label: "งู / พญานาค", digits: [5, 6] },
-  { words: ["น้ำ", "ฝน", "ทะเล", "แม่น้ำ"], label: "น้ำ / ฝน", digits: [2, 9] },
-  { words: ["ปลา", "กุ้ง", "สัตว์น้ำ"], label: "ปลา / สัตว์น้ำ", digits: [8, 9] },
-  { words: ["เด็ก", "ทารก", "ลูก"], label: "เด็ก / ทารก", digits: [1, 7] },
-  { words: ["พระ", "วัด", "เจดีย์"], label: "พระ / วัด", digits: [0, 9] },
-  { words: ["รถ", "ขับรถ", "เดินทาง"], label: "รถ / การเดินทาง", digits: [4, 1] },
-  { words: ["เงิน", "ทอง", "แหวน", "สร้อย"], label: "เงิน / ทอง", digits: [3, 8] },
-  { words: ["บ้าน", "ห้อง", "ประตู"], label: "บ้าน / ที่พัก", digits: [4, 7] },
-  { words: ["ไฟ", "เทียน", "แสง"], label: "ไฟ / แสง", digits: [5, 8] },
-  { words: ["คนตาย", "ผู้ตาย", "ศพ", "งานศพ"], label: "ผู้ล่วงลับ", digits: [0, 4] },
-  { words: ["สุนัข", "หมา"], label: "สุนัข", digits: [2, 6] },
+  { words: ["งู", "พญานาค"], label: "งู / พญานาค", digits: [5, 6, 9] },
+  { words: ["น้ำ", "ฝน", "ทะเล", "แม่น้ำ"], label: "น้ำ / ฝน", digits: [2, 7] },
+  { words: ["ปลา", "กุ้ง", "สัตว์น้ำ"], label: "ปลา / สัตว์น้ำ", digits: [7, 8] },
+  { words: ["เด็ก", "ทารก", "ลูก"], label: "เด็ก / ทารก", digits: [1, 3] },
+  { words: ["พระ", "วัด", "เจดีย์"], label: "พระ / วัด", digits: [5, 9] },
+  { words: ["รถ", "ขับรถ", "เดินทาง"], label: "รถ / การเดินทาง", digits: [4, 7] },
+  { words: ["เงิน", "ทอง", "แหวน", "สร้อย"], label: "เงิน / ทอง", digits: [8, 9] },
+  { words: ["บ้าน", "ห้อง", "ประตู"], label: "บ้าน / ที่พัก", digits: [4] },
+  { words: ["ไฟ", "เทียน", "แสง"], label: "ไฟ / แสง", digits: [4, 7] },
+  { words: ["คนตาย", "ผู้ตาย", "ศพ", "งานศพ"], label: "ผู้ล่วงลับ", digits: [0, 4, 7] },
+  { words: ["สุนัข", "หมา"], label: "สุนัข", digits: [4, 6] },
   { words: ["แมว"], label: "แมว", digits: [3, 4] },
-  { words: ["นก", "บิน"], label: "นก / การบิน", digits: [1, 5] },
-  { words: ["ช้าง"], label: "ช้าง", digits: [7, 9] },
+  { words: ["นก", "บิน"], label: "นก / การบิน", digits: [1, 6] },
+  { words: ["ช้าง"], label: "ช้าง", digits: [9] },
 ];
 
 const FAVORITE_COLORS = ["ม่วง", "แดง", "ทอง", "เขียว", "ฟ้า", "ชมพู", "ขาว", "ดำ"];
+const COLOR_DIGITS = {
+  แดง: 1,
+  เหลือง: 2,
+  ครีม: 2,
+  ชมพู: 3,
+  เขียว: 4,
+  ส้ม: 5,
+  น้ำตาล: 5,
+  ฟ้า: 6,
+  น้ำเงิน: 6,
+  ม่วง: 7,
+  เทา: 8,
+  ดำ: 8,
+  ขาว: 9,
+  ทอง: 9,
+  เงิน: 9,
+};
 
 function todayInputValue() {
   const date = new Date();
@@ -115,39 +132,129 @@ function randomFromSeed(seed) {
   };
 }
 
-function uniqueValues(makeValue, count, limit = 100) {
-  const values = new Set();
-  let guard = 0;
-  while (values.size < count && guard < limit) {
-    values.add(makeValue());
-    guard += 1;
+function digitRoot(value) {
+  const digits = String(value).match(/\d/g) || [];
+  if (!digits.length) return 0;
+  let total = digits.reduce((sum, digit) => sum + Number(digit), 0);
+  while (total > 9) {
+    total = String(total)
+      .split("")
+      .reduce((sum, digit) => sum + Number(digit), 0);
   }
-  return [...values];
+  return total;
 }
 
-function makeNumberSet(seed, preferredDigits = []) {
+function makeNumberSet(seed, preferredDigits = [], preferredSequences = {}) {
   const next = randomFromSeed(seed || 1);
-  const digits = uniqueValues(
-    () => Math.floor(next() * 10),
-    3,
-    60
-  );
+  const digits = [];
   preferredDigits.forEach((digit) => {
     const normalized = Math.abs(Number(digit)) % 10;
-    if (!digits.includes(normalized)) digits.unshift(normalized);
+    if (Number.isFinite(normalized) && !digits.includes(normalized)) digits.push(normalized);
   });
+  let guard = 0;
+  while (digits.length < 3 && guard < 60) {
+    const digit = Math.floor(next() * 10);
+    if (!digits.includes(digit)) digits.push(digit);
+    guard += 1;
+  }
   const topDigits = digits.slice(0, 3);
-  const two = uniqueValues(
-    () => String(Math.floor(next() * 100)).padStart(2, "0"),
-    6,
-    120
-  );
-  const three = uniqueValues(
-    () => String(Math.floor(next() * 1000)).padStart(3, "0"),
-    4,
-    120
-  );
+  const [a, b, c] = topDigits.map(String);
+  const pairCandidates = [`${a}${b}`, `${b}${a}`, `${a}${c}`, `${c}${a}`, `${b}${c}`, `${c}${b}`];
+  const tripleCandidates = [`${a}${b}${c}`, `${a}${c}${b}`, `${b}${a}${c}`, `${c}${b}${a}`];
+  const pairOffset = Math.floor(next() * pairCandidates.length);
+  const tripleOffset = Math.floor(next() * tripleCandidates.length);
+  const explicitTwo = (preferredSequences.two || []).map(String).filter((value) => /^\d{2}$/.test(value));
+  const explicitThree = (preferredSequences.three || [])
+    .map(String)
+    .filter((value) => /^\d{3}$/.test(value));
+  const two = [
+    ...new Set([
+      ...explicitTwo,
+      ...pairCandidates.slice(pairOffset),
+      ...pairCandidates.slice(0, pairOffset),
+    ]),
+  ].slice(0, 5);
+  const three = [
+    ...new Set([
+      ...explicitThree,
+      ...tripleCandidates.slice(tripleOffset),
+      ...tripleCandidates.slice(0, tripleOffset),
+    ]),
+  ].slice(0, 3);
   return { digits: topDigits, two, three };
+}
+
+function addNumberExplanation(result, { source, digitReason, evidence = "สูตรจำลอง", limitation = "" }) {
+  const featured = result.digits.join(" • ");
+  return {
+    ...result,
+    explanation: {
+      source,
+      evidence,
+      rows: [
+        {
+          label: `เลขเด่น ${featured}`,
+          detail: digitReason,
+        },
+        {
+          label: `เลข 2 ตัว ${result.two.join(", ")}`,
+          detail: `คงเลข 2 ตัวที่ปรากฏตรงในข้อมูลก่อน (ถ้ามี) แล้วเติมชุดที่จับคู่จากเลขเด่น ${featured} ด้วยลำดับสูตรจำลองคงที่`,
+        },
+        {
+          label: `เลข 3 ตัว ${result.three.join(", ")}`,
+          detail: `คงเลข 3 ตัวที่ปรากฏตรงในข้อมูลก่อน (ถ้ามี) แล้วเติมชุดที่เรียงจากเลขเด่นทั้ง 3 ตัว โดยไม่สร้างเลขทุกแบบ`,
+        },
+      ],
+      limitation,
+      speech: digitReason,
+    },
+  };
+}
+
+function dateSignals(dateValue) {
+  const parsed = new Date(`${dateValue}T12:00:00`);
+  const [year = "", month = "", dayOfMonth = ""] = String(dateValue).split("-");
+  return {
+    parsed,
+    weekday: THAI_DAYS[parsed.getDay()],
+    dayText: dayOfMonth,
+    monthText: month,
+    yearText: year,
+    dayDigit: Number(dayOfMonth) % 10,
+    monthDigit: Number(month) % 10,
+    root: digitRoot(dateValue),
+  };
+}
+
+function makeMemberNumberResult(profile) {
+  const signals = dateSignals(profile.birthDate);
+  const colorDigit = COLOR_DIGITS[profile.color] ?? 9;
+  const result = makeNumberSet(
+    hashText(JSON.stringify(profile)),
+    [signals.root, signals.weekday.digit, colorDigit],
+    {
+      two: [signals.dayText, signals.monthText, signals.yearText.slice(-2)],
+      three: [signals.yearText.slice(-3)],
+    }
+  );
+  return addNumberExplanation(result, {
+    source: `ใช้วันเกิด สีที่เลือก “${profile.color}” และคำตั้งใจที่สมาชิกกรอกไว้ในอุปกรณ์นี้`,
+    digitReason: `เลข ${signals.root} มาจากผลรวมวันเกิดลดเหลือหลักเดียว, เลข ${signals.weekday.digit} มาจาก${signals.weekday.name} และเลข ${colorDigit} มาจากตารางสี-เลขของระบบ`,
+    evidence: "ข้อมูลสมาชิก",
+    limitation: "วันเกิดและสีเป็นการตีความเชิงความเชื่อ ส่วนคำตั้งใจใช้กำหนดลำดับด้วยสูตรจำลองเท่านั้น",
+  });
+}
+
+function isLineInAppBrowser() {
+  if (typeof navigator === "undefined") return false;
+  return /\bLine\//i.test(navigator.userAgent || "");
+}
+
+function makeExternalBrowserUrl(value) {
+  if (!value) return "";
+  const url = new URL(value);
+  url.searchParams.set("openExternalBrowser", "1");
+  return url.toString();
 }
 
 function extractDigitRanking(text) {
@@ -177,7 +284,8 @@ function resultSpeech(title, result) {
   const featured = result.digits.map(pronounceDigits).join(", ");
   const twoDigits = result.two.map(pronounceDigits).join(", ");
   const threeDigits = result.three.map(pronounceDigits).join(", ");
-  return `ผล${title}ออกแล้ว เลขเด่น ${featured}. เลขสองตัว ${twoDigits}. และเลขสามตัว ${threeDigits}`;
+  const reason = result.explanation?.speech ? `. เหตุผล ${result.explanation.speech}` : "";
+  return `ผล${title}ออกแล้ว เลขเด่น ${featured}. เลขสองตัว ${twoDigits}. และเลขสามตัว ${threeDigits}${reason}`;
 }
 
 function buttonSpeechLabel(button) {
@@ -285,6 +393,30 @@ function NumberResult({ result, title, note, onSave, onShare, onRead }) {
         </div>
       </div>
 
+      {result.explanation ? (
+        <section className="reason-panel" aria-label="เหตุผลของเลขที่ได้">
+          <div className="reason-heading">
+            <div>
+              <span className="eyebrow">WHY THESE NUMBERS</span>
+              <h4>เหตุผลที่ได้เลขชุดนี้</h4>
+            </div>
+            <span className="evidence-badge">{result.explanation.evidence}</span>
+          </div>
+          <p className="reason-source">{result.explanation.source}</p>
+          <div className="reason-list">
+            {result.explanation.rows.map((row) => (
+              <article className="reason-row" key={row.label}>
+                <strong>{row.label}</strong>
+                <p>{row.detail}</p>
+              </article>
+            ))}
+          </div>
+          {result.explanation.limitation ? (
+            <p className="reason-limitation">ข้อจำกัด: {result.explanation.limitation}</p>
+          ) : null}
+        </section>
+      ) : null}
+
       {note ? <p className="result-note">{note}</p> : null}
 
       {onRead ? (
@@ -336,10 +468,23 @@ function DailyPage({ saveResult, share, announceResult }) {
   const [result, setResult] = useState(null);
 
   const analyze = () => {
-    const parsed = new Date(`${date}T12:00:00`);
-    const day = THAI_DAYS[parsed.getDay()];
+    const signals = dateSignals(date);
+    const day = signals.weekday;
     const seed = hashText(`${date}-${day.name}-daily`);
-    const nextResult = { ...makeNumberSet(seed, [day.digit]), day };
+    const numberSet = makeNumberSet(
+      seed,
+      [day.digit, signals.dayDigit, signals.monthDigit],
+      { two: [signals.dayText, signals.monthText] }
+    );
+    const nextResult = {
+      ...addNumberExplanation(numberSet, {
+        source: `ใช้วันที่ ${formatThaiDate(date)} และวันในสัปดาห์เป็นสัญญาณตั้งต้น`,
+        digitReason: `เลข ${day.digit} มาจาก${day.name}, เลข ${signals.dayDigit} มาจากหลักหน่วยของวันที่ และเลข ${signals.monthDigit} มาจากหลักหน่วยของเดือน หากมีเลขซ้ำ ระบบจะเติมหลักที่ขาดจากค่าแฮชของวันที่`,
+        evidence: "วันที่เลือก",
+        limitation: "เป็นการจับคู่เชิงความเชื่อและสูตรจำลอง ไม่ได้เพิ่มโอกาสถูกรางวัล",
+      }),
+      day,
+    };
     setResult(nextResult);
     announceResult("เลขประจำวัน", nextResult, "วิเคราะห์เลขประจำวัน");
   };
@@ -410,8 +555,26 @@ function DreamPage({ saveResult, share, announceResult }) {
     const found = DREAM_SYMBOLS.filter((symbol) =>
       symbol.words.some((word) => normalized.includes(word))
     );
-    const preferred = found.flatMap((item) => item.digits);
-    const nextResult = makeNumberSet(hashText(`${normalized}-dream`), preferred);
+    const directNumbers = normalized.match(/\d+/g) || [];
+    const directDigits = [...new Set(directNumbers.flatMap((number) => number.split("").map(Number)))];
+    const preferred = [...directDigits, ...found.flatMap((item) => item.digits)];
+    const symbolReason = found
+      .map((item) => `${item.label} → ${item.digits.join("/")}`)
+      .join(", ");
+    const numberSet = makeNumberSet(hashText(`${normalized}-dream`), preferred, {
+      two: directNumbers.filter((number) => number.length === 2),
+      three: directNumbers.filter((number) => number.length === 3),
+    });
+    const nextResult = addNumberExplanation(numberSet, {
+      source: "ใช้เฉพาะรายละเอียดความฝันที่กรอกในครั้งนี้ ไม่ค้นข้อมูลส่วนตัวจากภายนอก",
+      digitReason: directDigits.length
+        ? `พบตัวเลขตรงในความฝัน ${directNumbers.join(", ")} จึงคงลำดับและเลขศูนย์นำหน้าก่อน${symbolReason ? ` และพบสัญลักษณ์ตามตารางสำรอง: ${symbolReason}` : ""}`
+        : symbolReason
+          ? `พบสัญลักษณ์ตามตารางสำรองความเชื่อของระบบ: ${symbolReason}`
+          : "ไม่พบตัวเลขตรงหรือสัญลักษณ์ในตาราง เลขเด่นจึงมาจากค่าแฮชของข้อความและถือว่าหลักฐานจำกัด",
+      evidence: directDigits.length ? "เลขตรงในฝัน" : found.length ? "ตารางความเชื่อ" : "หลักฐานจำกัด",
+      limitation: "ความหมายของความฝันแตกต่างกันตามบุคคลและวัฒนธรรม ตารางนี้ใช้เพื่อความบันเทิงเท่านั้น",
+    });
     setMatches(found);
     setResult(nextResult);
     announceResult("เลขความฝัน", nextResult, "แปลความฝันเป็นเลข");
@@ -497,10 +660,25 @@ function SocialPage({ saveResult, share, announceResult }) {
     const preferred = hasDigits
       ? ranking.filter((item) => item.count > 0).slice(0, 3).map((item) => item.digit)
       : fallback.digits;
+    const topMentions = ranking.filter((item) => item.count > 0).slice(0, 3);
+    const directNumbers = content.match(/\d+/g) || [];
+    const numberSet = makeNumberSet(hashText(`${content}-social-result`), preferred, {
+      two: directNumbers.filter((number) => number.length === 2),
+      three: directNumbers.filter((number) => number.length === 3),
+    });
     const nextAnalysis = {
       ranking,
       hasDigits,
-      result: makeNumberSet(hashText(`${content}-social-result`), preferred),
+      result: addNumberExplanation(numberSet, {
+        source: "วิเคราะห์เฉพาะข้อความ Social ที่ผู้ใช้นำมาวาง ระบบไม่ได้ดึงข้อมูลสดจากแพลตฟอร์ม",
+        digitReason: hasDigits
+          ? `จัดอันดับตามจำนวนครั้งที่พบในข้อความ: ${topMentions
+              .map((item) => `เลข ${item.digit} พบ ${item.count} ครั้ง`)
+              .join(", ")}`
+          : "ไม่พบตัวเลขในข้อความ เลขเด่นจึงมาจากค่าแฮชของข้อความและถือว่าหลักฐานจำกัด",
+        evidence: hasDigits ? "ความถี่ในข้อความ" : "หลักฐานจำกัด",
+        limitation: "ความถี่ในข้อความหนึ่งชุดไม่ใช่กระแส Social ทั้งหมด และไม่ใช่ความน่าจะเป็นของผลรางวัล",
+      }),
     };
     setAnalysis(nextAnalysis);
     announceResult("เลขเด่นโซเชียล", nextAnalysis.result, "วิเคราะห์กระแสเลข");
@@ -604,8 +782,29 @@ function AIPage({ saveResult, share, announceResult }) {
   const [result, setResult] = useState(null);
 
   const analyze = () => {
-    const seedSource = [birthDate || todayInputValue(), color, focus, keyword.trim(), todayInputValue()].join("|");
-    const nextResult = makeNumberSet(hashText(seedSource));
+    const dateValue = birthDate || todayInputValue();
+    const signals = dateSignals(dateValue);
+    const colorDigit = COLOR_DIGITS[color] ?? 7;
+    const seedSource = [dateValue, color, focus, keyword.trim(), todayInputValue()].join("|");
+    const preferred = birthDate
+      ? [signals.root, signals.weekday.digit, colorDigit]
+      : [colorDigit, signals.weekday.digit, signals.root];
+    const numberSet = makeNumberSet(hashText(seedSource), preferred, {
+      two: birthDate
+        ? [signals.dayText, signals.monthText, signals.yearText.slice(-2)]
+        : [signals.dayText, signals.monthText],
+      three: birthDate ? [signals.yearText.slice(-3)] : [],
+    });
+    const nextResult = addNumberExplanation(numberSet, {
+      source: birthDate
+        ? `ใช้วันเกิด สีที่ชอบ “${color}” เป้าหมายด้าน${focus}${keyword.trim() ? ` และคำ “${keyword.trim()}”` : ""}`
+        : `ไม่ได้กรอกวันเกิด จึงใช้วันที่ปัจจุบันร่วมกับสี “${color}” และเป้าหมายด้าน${focus}`,
+      digitReason: birthDate
+        ? `เลข ${signals.root} มาจากผลรวมวันเกิดลดเหลือหลักเดียว, เลข ${signals.weekday.digit} มาจาก${signals.weekday.name} และเลข ${colorDigit} มาจากตารางสี-เลข`
+        : `เลข ${colorDigit} มาจากตารางสี-เลข, เลข ${signals.weekday.digit} มาจาก${signals.weekday.name} และเลข ${signals.root} มาจากผลรวมวันที่ปัจจุบัน`,
+      evidence: birthDate ? "วันเกิด + สี" : "วันที่ + สี",
+      limitation: "เป้าหมายและคำที่กรอกใช้กำหนดลำดับด้วยสูตรจำลอง ไม่มีการอ้างว่า AI ทำนายผลจริง",
+    });
     setResult(nextResult);
     announceResult("เลขจากเอไอ", nextResult, "สร้างชุดเลขของฉัน");
   };
@@ -745,10 +944,24 @@ function TemplePage({ saveResult, share, notify, announceResult }) {
   const analyze = () => {
     const allNumbers = records.map((item) => item.numbers).join(" ");
     const ranked = extractDigitRanking(allNumbers).filter((item) => item.count > 0);
-    const nextResult = makeNumberSet(
+    const directNumbers = allNumbers.match(/\d+/g) || [];
+    const numberSet = makeNumberSet(
       hashText(`${allNumbers}-${todayInputValue()}-temple`),
-      ranked.slice(0, 3).map((item) => item.digit)
+      ranked.slice(0, 3).map((item) => item.digit),
+      {
+        two: directNumbers.filter((number) => number.length === 2),
+        three: directNumbers.filter((number) => number.length === 3),
+      }
     );
+    const nextResult = addNumberExplanation(numberSet, {
+      source: `ใช้ตัวเลขจาก ${records.length} รายการที่ผู้ใช้บันทึกไว้ในอุปกรณ์ พร้อมชื่อสถานที่และที่มาที่กรอกเอง`,
+      digitReason: `เรียงเลขเด่นตามความถี่: ${ranked
+        .slice(0, 3)
+        .map((item) => `เลข ${item.digit} พบ ${item.count} ครั้ง`)
+        .join(", ")}`,
+      evidence: `${records.length} รายการบันทึก`,
+      limitation: "ระบบไม่ได้ตรวจสอบหรือสร้างข่าวจากวัด และจำนวนครั้งที่พบไม่ใช่ความน่าจะเป็นของผลรางวัล",
+    });
     setResult(nextResult);
     announceResult("เลขจากวัดดัง", nextResult, "วิเคราะห์เลขจากข้อมูลทั้งหมด");
   };
@@ -901,9 +1114,7 @@ function MemberPage({ saveResult, share, notify, announceResult }) {
       setColor(saved.color || "ทอง");
       setKeyword(saved.keyword || "");
       setProfile(saved);
-      const parsed = saved.birthDate ? new Date(`${saved.birthDate}T12:00:00`) : new Date();
-      const day = THAI_DAYS[parsed.getDay()];
-      setResult(makeNumberSet(hashText(JSON.stringify(saved)), [day.digit]));
+      setResult(makeMemberNumberResult(saved));
     }
   }, []);
 
@@ -920,9 +1131,7 @@ function MemberPage({ saveResult, share, notify, announceResult }) {
       keyword: keyword.trim(),
       updatedAt: new Date().toISOString(),
     };
-    const parsed = new Date(`${birthDate}T12:00:00`);
-    const day = THAI_DAYS[parsed.getDay()];
-    const nextResult = makeNumberSet(hashText(JSON.stringify(nextProfile)), [day.digit]);
+    const nextResult = makeMemberNumberResult(nextProfile);
     setProfile(nextProfile);
     setResult(nextResult);
     writeLocal("lucky_member_profile", nextProfile);
@@ -1052,6 +1261,11 @@ function HistoryPage({ history, clearHistory, share, announceResult }) {
                   ))}
                 </div>
                 <p>{item.context || "ผลที่บันทึกไว้"}</p>
+                {item.result.explanation?.rows?.[0]?.detail ? (
+                  <p className="history-reason">
+                    <strong>เหตุผล:</strong> {item.result.explanation.rows[0].detail}
+                  </p>
+                ) : null}
                 <div className="history-bottom">
                   <span>2 ตัว: {item.result.two.join(" • ")}</span>
                   <div className="history-actions">
@@ -1086,42 +1300,62 @@ function HistoryPage({ history, clearHistory, share, announceResult }) {
   );
 }
 
-function VoiceGuide({ status, error, onTest }) {
+function VoiceGuide({ status, error, onTest, lineBrowser, externalBrowserUrl }) {
   const isProblem = status === "unsupported" || status === "error";
-  const statusText =
-    status === "speaking"
-      ? "กำลังพูดภาษาไทย…"
-      : status === "starting"
-        ? "กำลังเริ่มเสียง…"
-        : status === "loading"
-          ? "กำลังค้นหาเสียงภาษาไทยในเครื่อง"
-          : isProblem
-            ? error || "อุปกรณ์นี้ยังไม่พร้อมอ่านออกเสียง"
-            : "พร้อมบอกชื่อปุ่มและอ่านผลเลขให้ฟัง";
+  const isLineNotice = lineBrowser || status === "line-browser";
+  let statusText = "พร้อมบอกชื่อปุ่มและอ่านผลเลขให้ฟัง";
+  if (status === "speaking") statusText = "กำลังพูดภาษาไทย…";
+  if (status === "starting") statusText = "กำลังเริ่มเสียง…";
+  if (status === "loading") statusText = "กำลังค้นหาเสียงภาษาไทยในเครื่อง";
+  if (isProblem) statusText = error || "อุปกรณ์นี้ยังไม่พร้อมอ่านออกเสียง";
+  if (isLineNotice && status !== "speaking" && status !== "starting") {
+    statusText = isProblem && error
+      ? `${error} เปิดผ่าน Chrome หรือ Safari เพื่อใช้เสียงอ่าน`
+      : "เว็บใน LINE อาจไม่เปิดบริการอ่านข้อความ กดเปิดเบราว์เซอร์ภายนอกเพื่อใช้เสียงอ่านเต็มรูปแบบ";
+  }
 
   return (
-    <section className={`voice-guide ${isProblem ? "has-error" : status}`} aria-live="polite">
+    <section
+      className={`voice-guide ${isLineNotice ? "line-browser" : isProblem ? "has-error" : status}`}
+      aria-live="polite"
+    >
       <div className="voice-guide-icon" aria-hidden="true">
-        {isProblem ? "!" : "🔊"}
+        {isLineNotice ? "LINE" : isProblem ? "!" : "🔊"}
         <span />
       </div>
       <div className="voice-guide-copy">
-        <strong>{isProblem ? "ตรวจพบปัญหาเสียงพูด" : "เสียงอ่านภาษาไทย"}</strong>
+        <strong>
+          {isLineNotice ? "เปิดผ่าน LINE" : isProblem ? "ตรวจพบปัญหาเสียงพูด" : "เสียงอ่านภาษาไทย"}
+        </strong>
         <p>{statusText}</p>
       </div>
-      <button
-        className="voice-test-button"
-        type="button"
-        onClick={onTest}
-        data-speech-handled="true"
-      >
-        ▶ ทดสอบเสียง
-      </button>
+      <div className="voice-guide-actions">
+        <button
+          className="voice-test-button"
+          type="button"
+          onClick={onTest}
+          data-speech-handled="true"
+        >
+          ▶ {isLineNotice ? "ลองเสียงใน LINE" : "ทดสอบเสียง"}
+        </button>
+        {isLineNotice && externalBrowserUrl ? (
+          <a className="external-browser-button" href={externalBrowserUrl} rel="noreferrer">
+            เปิด Chrome / Safari ↗
+          </a>
+        ) : null}
+      </div>
     </section>
   );
 }
 
-function HomePage({ openView, speechStatus, speechError, testSpeech }) {
+function HomePage({
+  openView,
+  speechStatus,
+  speechError,
+  testSpeech,
+  lineBrowser,
+  externalBrowserUrl,
+}) {
   const today = useMemo(() => formatThaiDate(new Date()), []);
   return (
     <>
@@ -1142,7 +1376,13 @@ function HomePage({ openView, speechStatus, speechError, testSpeech }) {
         </div>
       </section>
 
-      <VoiceGuide status={speechStatus} error={speechError} onTest={testSpeech} />
+      <VoiceGuide
+        status={speechStatus}
+        error={speechError}
+        onTest={testSpeech}
+        lineBrowser={lineBrowser}
+        externalBrowserUrl={externalBrowserUrl}
+      />
 
       <div className="home-heading">
         <div>
@@ -1196,6 +1436,8 @@ export default function LuckyNumberApp() {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [speechStatus, setSpeechStatus] = useState("checking");
   const [speechError, setSpeechError] = useState("");
+  const [lineBrowser, setLineBrowser] = useState(false);
+  const [externalBrowserUrl, setExternalBrowserUrl] = useState("");
   const appShellRef = useRef(null);
   const audioContextRef = useRef(null);
   const speechVoiceRef = useRef(null);
@@ -1205,9 +1447,16 @@ export default function LuckyNumberApp() {
   const speechGenerationRef = useRef(0);
 
   useEffect(() => {
+    const openedInLine = isLineInAppBrowser();
     setHistory(readLocal("lucky_number_history", []));
     setSoundEnabled(readLocal(SOUND_STORAGE_KEY, true) !== false);
     setVoiceEnabled(readLocal(VOICE_STORAGE_KEY, true) !== false);
+    setLineBrowser(openedInLine);
+    setExternalBrowserUrl(makeExternalBrowserUrl(window.location.href));
+    if (openedInLine) {
+      setSpeechStatus("line-browser");
+      setSpeechError("LINE อาจจำกัดระบบอ่านข้อความของหน้าเว็บ");
+    }
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
       navigator.serviceWorker.register("/sw.js").catch(() => undefined);
     }
@@ -1227,6 +1476,7 @@ export default function LuckyNumberApp() {
         voices.find((voice) => /thai|ไทย/i.test(voice.name)) ||
         null;
       setSpeechStatus((current) => {
+        if (isLineInAppBrowser()) return "line-browser";
         if (current !== "checking" && current !== "loading") return current;
         return voices.length ? "ready" : "loading";
       });
@@ -1252,17 +1502,21 @@ export default function LuckyNumberApp() {
         }
 
         const audioContext = audioContextRef.current;
-        if (audioContext.state === "suspended") {
-          audioContext.resume().catch(() => undefined);
-        }
+        const startTone = () => {
+          if (kind === "magic") {
+            playTone(audioContext, 523.25, 0, 0.1, 0.075);
+            playTone(audioContext, 783.99, 0.045, 0.13, 0.052);
+          } else if (kind === "toggle") {
+            playTone(audioContext, 659.25, 0, 0.11, 0.065);
+          } else {
+            playTone(audioContext, 440, 0, 0.075, 0.045);
+          }
+        };
 
-        if (kind === "magic") {
-          playTone(audioContext, 523.25, 0, 0.1, 0.075);
-          playTone(audioContext, 783.99, 0.045, 0.13, 0.052);
-        } else if (kind === "toggle") {
-          playTone(audioContext, 659.25, 0, 0.11, 0.065);
+        if (audioContext.state === "suspended") {
+          audioContext.resume().then(startTone).catch(() => undefined);
         } else {
-          playTone(audioContext, 440, 0, 0.075, 0.045);
+          startTone();
         }
       } catch {
         // Some embedded browsers block Web Audio. Buttons still work normally.
@@ -1500,12 +1754,14 @@ export default function LuckyNumberApp() {
   };
 
   const share = async (title, result) => {
-    const text = `${title}\n${resultSummary(result)}\nเพื่อความบันเทิงและความเชื่อส่วนบุคคล`;
+    const reason = result.explanation?.rows?.[0]?.detail || "สร้างจากสูตรจำลองเพื่อความบันเทิง";
+    const url = externalBrowserUrl || makeExternalBrowserUrl(window.location.href);
+    const text = `${title}\n${resultSummary(result)}\nเหตุผล: ${reason}\nเพื่อความบันเทิงและความเชื่อส่วนบุคคล`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: "AI ให้เลขเด็ด", text });
+        await navigator.share({ title: "AI ให้เลขเด็ด", text, url });
       } else {
-        await navigator.clipboard.writeText(text);
+        await navigator.clipboard.writeText(`${text}\n${url}`);
         notify("คัดลอกผลแล้ว");
       }
     } catch (error) {
@@ -1565,6 +1821,8 @@ export default function LuckyNumberApp() {
             speechStatus={speechStatus}
             speechError={speechError}
             testSpeech={testSpeech}
+            lineBrowser={lineBrowser}
+            externalBrowserUrl={externalBrowserUrl}
           />
         ) : null}
         {view === "daily" ? (
