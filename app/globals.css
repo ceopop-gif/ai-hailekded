@@ -135,7 +135,7 @@ select:focus-visible {
   top: 0;
   z-index: 30;
   display: grid;
-  grid-template-columns: 48px 1fr 48px;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
   align-items: center;
   min-height: 76px;
   padding: calc(10px + env(safe-area-inset-top)) 18px 10px;
@@ -162,6 +162,26 @@ select:focus-visible {
 
 .topbar-button {
   cursor: pointer;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sound-toggle {
+  font-size: 17px;
+}
+
+.sound-toggle span {
+  display: block;
+  filter: saturate(0.85);
+  line-height: 1;
+}
+
+.sound-toggle.active span {
+  filter: drop-shadow(0 0 7px rgba(255, 224, 135, 0.72));
 }
 
 .topbar-button:hover,
@@ -199,6 +219,70 @@ select:focus-visible {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.app-shell button.is-tapped {
+  animation: button-tap-glow 0.42s ease-out;
+}
+
+.tap-burst {
+  position: fixed;
+  z-index: 999;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 238, 177, 0.95);
+  border-radius: 50%;
+  box-shadow: 0 0 14px rgba(247, 203, 103, 0.78);
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.25);
+  animation: tap-burst 0.52s ease-out forwards;
+}
+
+.tap-burst::before,
+.tap-burst::after {
+  position: absolute;
+  inset: -7px;
+  background:
+    radial-gradient(circle, #fff8d2 0 2px, transparent 2.5px) 50% 0 / 5px 5px no-repeat,
+    radial-gradient(circle, #c4b5fd 0 2px, transparent 2.5px) 100% 50% / 5px 5px no-repeat,
+    radial-gradient(circle, #fff8d2 0 2px, transparent 2.5px) 50% 100% / 5px 5px no-repeat,
+    radial-gradient(circle, #c4b5fd 0 2px, transparent 2.5px) 0 50% / 5px 5px no-repeat;
+  content: "";
+}
+
+.tap-burst::after {
+  transform: rotate(45deg);
+}
+
+.tap-burst.magic {
+  width: 25px;
+  height: 25px;
+  border-color: #fff0a6;
+  box-shadow: 0 0 18px rgba(247, 203, 103, 0.9), 0 0 34px rgba(139, 92, 246, 0.68);
+}
+
+@keyframes tap-burst {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.25) rotate(0deg);
+  }
+  70% {
+    opacity: 0.76;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(3.1) rotate(18deg);
+  }
+}
+
+@keyframes button-tap-glow {
+  0%,
+  100% {
+    filter: none;
+  }
+  45% {
+    filter: brightness(1.2) drop-shadow(0 0 10px rgba(247, 203, 103, 0.46));
+  }
 }
 
 .topbar-title strong {
@@ -1490,6 +1574,24 @@ select.input-control option {
   .content-area {
     padding-right: 14px;
     padding-left: 14px;
+  }
+
+  .topbar {
+    padding-right: 13px;
+    padding-left: 13px;
+  }
+
+  .topbar-actions {
+    gap: 6px;
+  }
+
+  .topbar-title {
+    padding-right: 7px;
+    padding-left: 7px;
+  }
+
+  .topbar-title strong {
+    font-size: 16px;
   }
 
   .hero {
