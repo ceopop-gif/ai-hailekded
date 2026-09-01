@@ -41,10 +41,19 @@ assert.ok(page.includes("speechSynthesis"), "Missing spoken Thai button feedback
 assert.ok(page.includes("SpeechSynthesisUtterance"), "Missing browser speech utterance support");
 assert.ok(page.includes('utterance.lang = "th-TH"'), "Spoken feedback must request a Thai voice");
 assert.ok(page.includes("THAI_DIGIT_WORDS"), "Result numbers must be pronounced digit by digit");
+assert.ok(page.includes("lucky_voice_enabled_v2"), "Voice preference must default independently from old sound settings");
+assert.ok(page.includes("interrupt && hasActiveSpeech"), "Speech cancellation must only run for an active queue");
+assert.ok(page.includes("speechWatchdogRef"), "Silent speech failures need a visible timeout state");
+assert.ok(
+  (page.match(/data-speech-handled="true"/g) || []).length >= 9,
+  "Prediction, replay, history, and voice-test actions must use one combined utterance"
+);
 assert.equal((page.match(/onRead=/g) || []).length, 6, "Every prediction result needs a replay button");
 assert.ok(page.includes("อ่านเลขออกเสียง"), "Missing visible replay control for result numbers");
+assert.ok(page.includes("ทดสอบเสียงภาษาไทย"), "Missing direct Thai voice test");
 assert.ok(css.includes(".tap-burst"), "Missing visual tap effect");
 assert.ok(css.includes(".read-result-button"), "Missing replay button styling");
+assert.ok(css.includes(".voice-test-button"), "Missing visible speech diagnostic control");
 assert.ok(css.includes("@media (prefers-reduced-motion: reduce)"), "Missing reduced-motion support");
 assert.equal(manifest.display, "standalone", "PWA should open as a standalone app");
 assert.ok(hosting.project_id.startsWith("appgprj_"), "Missing Sites project binding");
