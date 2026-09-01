@@ -1076,6 +1076,50 @@ select.input-control option {
   text-align: center;
 }
 
+.read-result-button {
+  display: flex;
+  width: 100%;
+  min-height: 52px;
+  margin-top: 17px;
+  padding: 10px 16px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1px solid rgba(247, 203, 103, 0.42);
+  border-radius: 16px;
+  color: #fff4cc;
+  background:
+    linear-gradient(145deg, rgba(139, 92, 246, 0.28), rgba(247, 203, 103, 0.08)),
+    rgba(9, 3, 31, 0.4);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.12), 0 9px 24px rgba(0, 0, 0, 0.18);
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+
+.read-result-button span {
+  display: grid;
+  width: 29px;
+  height: 29px;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(247, 203, 103, 0.13);
+  font-size: 15px;
+}
+
+.read-result-button:hover {
+  border-color: rgba(255, 231, 167, 0.76);
+  background:
+    linear-gradient(145deg, rgba(139, 92, 246, 0.4), rgba(247, 203, 103, 0.13)),
+    rgba(9, 3, 31, 0.4);
+  transform: translateY(-1px);
+}
+
+.read-result-button:active {
+  transform: scale(0.985);
+}
+
 .symbol-card {
   padding: 17px;
   border-color: rgba(139, 92, 246, 0.34);
@@ -1477,6 +1521,12 @@ select.input-control option {
 .history-bottom {
   padding-top: 7px;
   border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.history-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .clear-button {
