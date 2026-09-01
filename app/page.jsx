@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const SOUND_STORAGE_KEY = "lucky_sound_enabled";
+const VOICE_STORAGE_KEY = "lucky_voice_enabled_v2";
 const THAI_DIGIT_WORDS = ["ศูนย์", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า"];
 
 const MENU_ITEMS = [
@@ -188,6 +189,19 @@ function buttonSpeechLabel(button) {
     .trim();
 }
 
+function speechFailureMessage(code) {
+  if (code === "language-unavailable" || code === "voice-unavailable") {
+    return "ไม่พบเสียงภาษาไทยในเครื่อง กรุณาเปิดบริการอ่านข้อความเป็นเสียงภาษาไทย";
+  }
+  if (code === "not-allowed") {
+    return "เบราว์เซอร์ยังไม่อนุญาตให้พูด กดปุ่มทดสอบเสียงอีกครั้ง";
+  }
+  if (code === "audio-busy" || code === "audio-hardware") {
+    return "อุปกรณ์เสียงไม่พร้อม กรุณาตรวจระดับเสียงและลองใหม่";
+  }
+  return "ไม่สามารถเริ่มเสียงพูดได้ กรุณากดทดสอบเสียงอีกครั้ง";
+}
+
 function readLocal(key, fallback) {
   if (typeof window === "undefined") return fallback;
   try {
@@ -279,6 +293,7 @@ function NumberResult({ result, title, note, onSave, onShare, onRead }) {
           type="button"
           onClick={onRead}
           aria-label="อ่านเลขออกเสียงอีกครั้ง"
+          data-speech-handled="true"
         >
           <span aria-hidden="true">🔊</span>
           อ่านเลขออกเสียง
@@ -326,7 +341,7 @@ function DailyPage({ saveResult, share, announceResult }) {
     const seed = hashText(`${date}-${day.name}-daily`);
     const nextResult = { ...makeNumberSet(seed, [day.digit]), day };
     setResult(nextResult);
-    announceResult("เลขประจำวัน", nextResult);
+    announceResult("เลขประจำวัน", nextResult, "วิเคราะห์เลขประจำวัน");
   };
 
   return (
@@ -347,7 +362,13 @@ function DailyPage({ saveResult, share, announceResult }) {
           value={date}
           onChange={(event) => setDate(event.target.value)}
         />
-        <button className="primary-button" type="button" onClick={analyze} disabled={!date}>
+        <button
+          className="primary-button"
+          type="button"
+          onClick={analyze}
+          disabled={!date}
+          data-speech-handled="true"
+        >
           ✦ วิเคราะห์เลขประจำวัน
         </button>
       </section>
@@ -373,7 +394,7 @@ function DailyPage({ saveResult, share, announceResult }) {
             : null
         }
         onShare={result ? () => share("เลขประจำวัน", result) : null}
-        onRead={result ? () => announceResult("เลขประจำวัน", result) : null}
+        onRead={result ? () => announceResult("เลขประจำวัน", result, "อ่านเลขออกเสียง") : null}
       />
     </>
   );
@@ -393,7 +414,7 @@ function DreamPage({ saveResult, share, announceResult }) {
     const nextResult = makeNumberSet(hashText(`${normalized}-dream`), preferred);
     setMatches(found);
     setResult(nextResult);
-    announceResult("เลขความฝัน", nextResult);
+    announceResult("เลขความฝัน", nextResult, "แปลความฝันเป็นเลข");
   };
 
   const useExample = () =>
@@ -430,6 +451,7 @@ function DreamPage({ saveResult, share, announceResult }) {
           type="button"
           onClick={analyze}
           disabled={dream.trim().length < 3}
+          data-speech-handled="true"
         >
           🌙 แปลความฝันเป็นเลข
         </button>
@@ -458,7 +480,7 @@ function DreamPage({ saveResult, share, announceResult }) {
           result ? () => saveResult("เลขความฝัน", result, matches.map((item) => item.label).join(", ")) : null
         }
         onShare={result ? () => share("เลขความฝัน", result) : null}
-        onRead={result ? () => announceResult("เลขความฝัน", result) : null}
+        onRead={result ? () => announceResult("เลขความฝัน", result, "อ่านเลขออกเสียง") : null}
       />
     </>
   );
@@ -481,7 +503,7 @@ function SocialPage({ saveResult, share, announceResult }) {
       result: makeNumberSet(hashText(`${content}-social-result`), preferred),
     };
     setAnalysis(nextAnalysis);
-    announceResult("เลขเด่นโซเชียล", nextAnalysis.result);
+    announceResult("เลขเด่นโซเชียล", nextAnalysis.result, "วิเคราะห์กระแสเลข");
   };
 
   const useExample = () =>
@@ -526,6 +548,7 @@ function SocialPage({ saveResult, share, announceResult }) {
           type="button"
           onClick={analyze}
           disabled={content.trim().length < 3}
+          data-speech-handled="true"
         >
           📊 วิเคราะห์กระแสเลข
         </button>
@@ -565,7 +588,9 @@ function SocialPage({ saveResult, share, announceResult }) {
           analysis ? () => saveResult("เลขเด่น Social", analysis.result, "วิเคราะห์จากข้อความที่ผู้ใช้วาง") : null
         }
         onShare={analysis ? () => share("เลขเด่น Social", analysis.result) : null}
-        onRead={analysis ? () => announceResult("เลขเด่นโซเชียล", analysis.result) : null}
+        onRead={
+          analysis ? () => announceResult("เลขเด่นโซเชียล", analysis.result, "อ่านเลขออกเสียง") : null
+        }
       />
     </>
   );
@@ -582,7 +607,7 @@ function AIPage({ saveResult, share, announceResult }) {
     const seedSource = [birthDate || todayInputValue(), color, focus, keyword.trim(), todayInputValue()].join("|");
     const nextResult = makeNumberSet(hashText(seedSource));
     setResult(nextResult);
-    announceResult("เลขจากเอไอ", nextResult);
+    announceResult("เลขจากเอไอ", nextResult, "สร้างชุดเลขของฉัน");
   };
 
   return (
@@ -649,7 +674,12 @@ function AIPage({ saveResult, share, announceResult }) {
           placeholder="เช่น เริ่มต้น ความสำเร็จ ครอบครัว"
         />
 
-        <button className="primary-button ai-button" type="button" onClick={analyze}>
+        <button
+          className="primary-button ai-button"
+          type="button"
+          onClick={analyze}
+          data-speech-handled="true"
+        >
           <span>AI</span> สร้างชุดเลขของฉัน
         </button>
       </section>
@@ -660,7 +690,7 @@ function AIPage({ saveResult, share, announceResult }) {
         note="AI เวอร์ชันนี้ใช้สูตรจำลองในอุปกรณ์ และไม่ส่งข้อมูลส่วนตัวออกไปภายนอก"
         onSave={result ? () => saveResult("เลขจาก AI", result, `โฟกัส: ${focus} • สี: ${color}`) : null}
         onShare={result ? () => share("เลขจาก AI", result) : null}
-        onRead={result ? () => announceResult("เลขจากเอไอ", result) : null}
+        onRead={result ? () => announceResult("เลขจากเอไอ", result, "อ่านเลขออกเสียง") : null}
       />
     </>
   );
@@ -720,7 +750,7 @@ function TemplePage({ saveResult, share, notify, announceResult }) {
       ranked.slice(0, 3).map((item) => item.digit)
     );
     setResult(nextResult);
-    announceResult("เลขจากวัดดัง", nextResult);
+    announceResult("เลขจากวัดดัง", nextResult, "วิเคราะห์เลขจากข้อมูลทั้งหมด");
   };
 
   return (
@@ -833,7 +863,12 @@ function TemplePage({ saveResult, share, notify, announceResult }) {
       )}
 
       {records.length ? (
-        <button className="primary-button standalone" type="button" onClick={analyze}>
+        <button
+          className="primary-button standalone"
+          type="button"
+          onClick={analyze}
+          data-speech-handled="true"
+        >
           ✦ วิเคราะห์เลขจากข้อมูลทั้งหมด
         </button>
       ) : null}
@@ -844,7 +879,7 @@ function TemplePage({ saveResult, share, notify, announceResult }) {
         note={`วิเคราะห์จาก ${records.length} แหล่งข้อมูลที่บันทึกไว้ในอุปกรณ์นี้`}
         onSave={result ? () => saveResult("เลขจากวัดดัง", result, `${records.length} แหล่งข้อมูล`) : null}
         onShare={result ? () => share("เลขจากวัดดัง", result) : null}
-        onRead={result ? () => announceResult("เลขจากวัดดัง", result) : null}
+        onRead={result ? () => announceResult("เลขจากวัดดัง", result, "อ่านเลขออกเสียง") : null}
       />
     </>
   );
@@ -892,7 +927,11 @@ function MemberPage({ saveResult, share, notify, announceResult }) {
     setResult(nextResult);
     writeLocal("lucky_member_profile", nextProfile);
     notify("บันทึกดวงสมาชิกแล้ว");
-    announceResult("ดวงสมาชิก", nextResult);
+    announceResult(
+      "ดวงสมาชิก",
+      nextResult,
+      profile ? "อัปเดตดวงสมาชิก" : "สร้างดวงสมาชิก"
+    );
   };
 
   const bornDay = profile?.birthDate
@@ -972,7 +1011,7 @@ function MemberPage({ saveResult, share, notify, announceResult }) {
           onChange={(event) => setKeyword(event.target.value.slice(0, 80))}
           placeholder="เช่น งานใหม่ สุขภาพดี ความสำเร็จ"
         />
-        <button className="primary-button" type="submit">
+        <button className="primary-button" type="submit" data-speech-handled="true">
           {profile ? "อัปเดตดวงสมาชิก" : "สร้างดวงสมาชิก"}
         </button>
         <p className="privacy-copy">🔒 ข้อมูลถูกเก็บไว้เฉพาะในอุปกรณ์นี้</p>
@@ -984,7 +1023,7 @@ function MemberPage({ saveResult, share, notify, announceResult }) {
         note={bornDay ? `${bornDay.name} • สีเสริมพลังตามความเชื่อ ${bornDay.color}` : ""}
         onSave={result ? () => saveResult("ดวงสมาชิก", result, profile?.name || "สมาชิก") : null}
         onShare={result ? () => share("ดวงสมาชิก", result) : null}
-        onRead={result ? () => announceResult("ดวงสมาชิก", result) : null}
+        onRead={result ? () => announceResult("ดวงสมาชิก", result, "อ่านเลขออกเสียง") : null}
       />
     </>
   );
@@ -1019,7 +1058,8 @@ function HistoryPage({ history, clearHistory, share, announceResult }) {
                     <button
                       className="text-button"
                       type="button"
-                      onClick={() => announceResult(item.title, item.result)}
+                      onClick={() => announceResult(item.title, item.result, "อ่านเลขที่บันทึกไว้")}
+                      data-speech-handled="true"
                     >
                       🔊 อ่านเลข
                     </button>
@@ -1046,7 +1086,42 @@ function HistoryPage({ history, clearHistory, share, announceResult }) {
   );
 }
 
-function HomePage({ openView }) {
+function VoiceGuide({ status, error, onTest }) {
+  const isProblem = status === "unsupported" || status === "error";
+  const statusText =
+    status === "speaking"
+      ? "กำลังพูดภาษาไทย…"
+      : status === "starting"
+        ? "กำลังเริ่มเสียง…"
+        : status === "loading"
+          ? "กำลังค้นหาเสียงภาษาไทยในเครื่อง"
+          : isProblem
+            ? error || "อุปกรณ์นี้ยังไม่พร้อมอ่านออกเสียง"
+            : "พร้อมบอกชื่อปุ่มและอ่านผลเลขให้ฟัง";
+
+  return (
+    <section className={`voice-guide ${isProblem ? "has-error" : status}`} aria-live="polite">
+      <div className="voice-guide-icon" aria-hidden="true">
+        {isProblem ? "!" : "🔊"}
+        <span />
+      </div>
+      <div className="voice-guide-copy">
+        <strong>{isProblem ? "ตรวจพบปัญหาเสียงพูด" : "เสียงอ่านภาษาไทย"}</strong>
+        <p>{statusText}</p>
+      </div>
+      <button
+        className="voice-test-button"
+        type="button"
+        onClick={onTest}
+        data-speech-handled="true"
+      >
+        ▶ ทดสอบเสียง
+      </button>
+    </section>
+  );
+}
+
+function HomePage({ openView, speechStatus, speechError, testSpeech }) {
   const today = useMemo(() => formatThaiDate(new Date()), []);
   return (
     <>
@@ -1066,6 +1141,8 @@ function HomePage({ openView }) {
           <span>9</span>
         </div>
       </section>
+
+      <VoiceGuide status={speechStatus} error={speechError} onTest={testSpeech} />
 
       <div className="home-heading">
         <div>
@@ -1116,21 +1193,32 @@ export default function LuckyNumberApp() {
   const [history, setHistory] = useState([]);
   const [toast, setToast] = useState("");
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [speechStatus, setSpeechStatus] = useState("checking");
+  const [speechError, setSpeechError] = useState("");
   const appShellRef = useRef(null);
   const audioContextRef = useRef(null);
   const speechVoiceRef = useRef(null);
   const speechUtterancesRef = useRef(new Set());
+  const speechWatchdogRef = useRef(null);
+  const speechRestartTimerRef = useRef(null);
+  const speechGenerationRef = useRef(0);
 
   useEffect(() => {
     setHistory(readLocal("lucky_number_history", []));
     setSoundEnabled(readLocal(SOUND_STORAGE_KEY, true) !== false);
+    setVoiceEnabled(readLocal(VOICE_STORAGE_KEY, true) !== false);
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
       navigator.serviceWorker.register("/sw.js").catch(() => undefined);
     }
   }, []);
 
   useEffect(() => {
-    if (!("speechSynthesis" in window)) return undefined;
+    if (!("speechSynthesis" in window) || typeof window.SpeechSynthesisUtterance !== "function") {
+      setSpeechStatus("unsupported");
+      setSpeechError("เบราว์เซอร์นี้ไม่รองรับเสียงพูด กรุณาเปิดด้วย Chrome หรือ Samsung Internet");
+      return undefined;
+    }
 
     const updateThaiVoice = () => {
       const voices = window.speechSynthesis.getVoices();
@@ -1138,6 +1226,10 @@ export default function LuckyNumberApp() {
         voices.find((voice) => /^th(?:-|_)/i.test(voice.lang)) ||
         voices.find((voice) => /thai|ไทย/i.test(voice.name)) ||
         null;
+      setSpeechStatus((current) => {
+        if (current !== "checking" && current !== "loading") return current;
+        return voices.length ? "ready" : "loading";
+      });
     };
 
     updateThaiVoice();
@@ -1180,43 +1272,124 @@ export default function LuckyNumberApp() {
   );
 
   const speakText = useCallback(
-    (text, { interrupt = false, force = false } = {}) => {
-      if ((!soundEnabled && !force) || !text || !("speechSynthesis" in window)) return;
-      if (typeof window.SpeechSynthesisUtterance !== "function") return;
+    (text, { interrupt = true, force = false } = {}) => {
+      if ((!voiceEnabled && !force) || !text) return false;
+      if (!("speechSynthesis" in window) || typeof window.SpeechSynthesisUtterance !== "function") {
+        setSpeechStatus("unsupported");
+        setSpeechError("เบราว์เซอร์นี้ไม่รองรับเสียงพูด กรุณาเปิดด้วย Chrome หรือ Samsung Internet");
+        return false;
+      }
 
       try {
         const synthesizer = window.speechSynthesis;
-        if (interrupt) {
+        const hasActiveSpeech = synthesizer.speaking || synthesizer.pending;
+        const generation = speechGenerationRef.current + 1;
+        speechGenerationRef.current = generation;
+
+        if (speechRestartTimerRef.current) {
+          window.clearTimeout(speechRestartTimerRef.current);
+          speechRestartTimerRef.current = null;
+        }
+        if (speechWatchdogRef.current) {
+          window.clearTimeout(speechWatchdogRef.current);
+          speechWatchdogRef.current = null;
+        }
+        if (interrupt && hasActiveSpeech) {
           synthesizer.cancel();
           speechUtterancesRef.current.clear();
         }
 
-        const utterance = new window.SpeechSynthesisUtterance(text);
-        utterance.lang = "th-TH";
-        utterance.rate = 0.9;
-        utterance.pitch = 1.02;
-        utterance.volume = 1;
-        if (speechVoiceRef.current) utterance.voice = speechVoiceRef.current;
+        const startSpeech = () => {
+          speechRestartTimerRef.current = null;
+          const availableVoices = synthesizer.getVoices();
+          const thaiVoice =
+            speechVoiceRef.current ||
+            availableVoices.find((voice) => /^th(?:-|_)/i.test(voice.lang)) ||
+            availableVoices.find((voice) => /thai|ไทย/i.test(voice.name)) ||
+            null;
+          const utterance = new window.SpeechSynthesisUtterance(text);
+          let started = false;
 
-        const releaseUtterance = () => speechUtterancesRef.current.delete(utterance);
-        utterance.addEventListener("end", releaseUtterance, { once: true });
-        utterance.addEventListener("error", releaseUtterance, { once: true });
-        speechUtterancesRef.current.add(utterance);
-        synthesizer.resume();
-        synthesizer.speak(utterance);
+          utterance.lang = "th-TH";
+          utterance.rate = 0.88;
+          utterance.pitch = 1;
+          utterance.volume = 1;
+          if (thaiVoice) {
+            speechVoiceRef.current = thaiVoice;
+            utterance.voice = thaiVoice;
+          }
+
+          const releaseUtterance = () => {
+            if (speechGenerationRef.current === generation && speechWatchdogRef.current) {
+              window.clearTimeout(speechWatchdogRef.current);
+              speechWatchdogRef.current = null;
+            }
+            speechUtterancesRef.current.delete(utterance);
+          };
+
+          utterance.onstart = () => {
+            started = true;
+            if (speechGenerationRef.current !== generation) return;
+            setSpeechStatus("speaking");
+            setSpeechError("");
+          };
+          utterance.onend = () => {
+            releaseUtterance();
+            if (speechGenerationRef.current !== generation) return;
+            setSpeechStatus("ready");
+          };
+          utterance.onerror = (event) => {
+            releaseUtterance();
+            if (speechGenerationRef.current !== generation) return;
+            if (event.error === "canceled" || event.error === "interrupted") return;
+            setSpeechStatus("error");
+            setSpeechError(speechFailureMessage(event.error));
+          };
+
+          speechUtterancesRef.current.add(utterance);
+          setSpeechStatus("starting");
+          setSpeechError("");
+          synthesizer.resume();
+          synthesizer.speak(utterance);
+
+          speechWatchdogRef.current = window.setTimeout(() => {
+            if (speechGenerationRef.current !== generation) return;
+            if (started || !speechUtterancesRef.current.has(utterance)) return;
+            synthesizer.cancel();
+            releaseUtterance();
+            setSpeechStatus("error");
+            setSpeechError("เครื่องไม่เริ่มเสียงพูด กรุณากดทดสอบเสียงหรือตรวจบริการเสียงภาษาไทย");
+          }, 3500);
+        };
+
+        if (interrupt && hasActiveSpeech) {
+          speechRestartTimerRef.current = window.setTimeout(startSpeech, 90);
+        } else {
+          startSpeech();
+        }
+        return true;
       } catch {
-        // Speech Synthesis is optional in some embedded browsers.
+        setSpeechStatus("error");
+        setSpeechError("ไม่สามารถเปิดระบบเสียงพูดได้ กรุณากดทดสอบเสียงอีกครั้ง");
+        return false;
       }
     },
-    [soundEnabled]
+    [voiceEnabled]
   );
 
   const announceResult = useCallback(
-    (resultTitle, result) => {
-      speakText(resultSpeech(resultTitle, result));
+    (resultTitle, result, actionLabel = "อ่านผลเลข") => {
+      speakText(`กดปุ่ม ${actionLabel}. ${resultSpeech(resultTitle, result)}`, { interrupt: true });
     },
     [speakText]
   );
+
+  const testSpeech = useCallback(() => {
+    speakText("ทดสอบเสียงภาษาไทย ระบบพร้อมอ่านเลข หนึ่ง สอง สาม", {
+      interrupt: true,
+      force: true,
+    });
+  }, [speakText]);
 
   useEffect(() => {
     const shell = appShellRef.current;
@@ -1227,13 +1400,16 @@ export default function LuckyNumberApp() {
       if (!button || !shell.contains(button) || button.disabled) return;
 
       const isSoundToggle = button.dataset.soundToggle === "true";
-      const isMagicAction = button.matches(".menu-card, .primary-button, .read-result-button");
+      const isSpeechHandled = button.dataset.speechHandled === "true";
+      const isMagicAction = button.matches(
+        ".menu-card, .primary-button, .read-result-button, .voice-test-button"
+      );
       playButtonSound(
         isSoundToggle ? "toggle" : isMagicAction ? "magic" : "tap",
         isSoundToggle && !soundEnabled
       );
 
-      if (!isSoundToggle) {
+      if (!isSoundToggle && !isSpeechHandled) {
         const spokenLabel = buttonSpeechLabel(button);
         if (spokenLabel) speakText(`กดปุ่ม ${spokenLabel}`, { interrupt: true });
       }
@@ -1277,6 +1453,8 @@ export default function LuckyNumberApp() {
         window.speechSynthesis.cancel();
         speechUtterancesRef.current.clear();
       }
+      if (speechWatchdogRef.current) window.clearTimeout(speechWatchdogRef.current);
+      if (speechRestartTimerRef.current) window.clearTimeout(speechRestartTimerRef.current);
     },
     []
   );
@@ -1290,14 +1468,18 @@ export default function LuckyNumberApp() {
     window.setTimeout(() => setToast(""), 2300);
   };
 
+  const audioEnabled = soundEnabled || voiceEnabled;
+
   const toggleSound = () => {
-    const nextValue = !soundEnabled;
+    const nextValue = !audioEnabled;
     speakText(nextValue ? "เปิดเสียงและคำอ่านแล้ว" : "ปิดเสียงและคำอ่านแล้ว", {
       interrupt: true,
       force: true,
     });
     setSoundEnabled(nextValue);
+    setVoiceEnabled(nextValue);
     writeLocal(SOUND_STORAGE_KEY, nextValue);
+    writeLocal(VOICE_STORAGE_KEY, nextValue);
     notify(nextValue ? "เปิดเสียงและคำอ่านแล้ว" : "ปิดเสียงและคำอ่านแล้ว");
   };
 
@@ -1354,15 +1536,15 @@ export default function LuckyNumberApp() {
         </div>
         <div className="topbar-actions">
           <button
-            className={soundEnabled ? "topbar-button sound-toggle active" : "topbar-button sound-toggle"}
+            className={audioEnabled ? "topbar-button sound-toggle active" : "topbar-button sound-toggle"}
             type="button"
             onClick={toggleSound}
-            aria-label={soundEnabled ? "ปิดเสียงและคำอ่าน" : "เปิดเสียงและคำอ่าน"}
-            aria-pressed={soundEnabled}
+            aria-label={audioEnabled ? "ปิดเสียงและคำอ่าน" : "เปิดเสียงและคำอ่าน"}
+            aria-pressed={audioEnabled}
             data-sound-toggle="true"
-            title={soundEnabled ? "ปิดเสียงและคำอ่าน" : "เปิดเสียงและคำอ่าน"}
+            title={audioEnabled ? "ปิดเสียงและคำอ่าน" : "เปิดเสียงและคำอ่าน"}
           >
-            <span aria-hidden="true">{soundEnabled ? "🔊" : "🔇"}</span>
+            <span aria-hidden="true">{audioEnabled ? "🔊" : "🔇"}</span>
           </button>
           <button
             className={view === "history" ? "topbar-button active" : "topbar-button"}
@@ -1377,7 +1559,14 @@ export default function LuckyNumberApp() {
       </header>
 
       <div className="content-area">
-        {view === "home" ? <HomePage openView={setView} /> : null}
+        {view === "home" ? (
+          <HomePage
+            openView={setView}
+            speechStatus={speechStatus}
+            speechError={speechError}
+            testSpeech={testSpeech}
+          />
+        ) : null}
         {view === "daily" ? (
           <DailyPage saveResult={saveResult} share={share} announceResult={announceResult} />
         ) : null}
