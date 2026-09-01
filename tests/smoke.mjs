@@ -34,6 +34,10 @@ assert.ok(page.includes("เพื่อความบันเทิงแล�
 assert.ok(page.includes("ไม่ได้ดึงข้อมูลสด"), "Social mode must disclose that data is not live");
 assert.ok(page.includes("ไม่สร้างข่าวหรืออ้างชื่อวัดแทนผู้ใช้"), "Temple data must not be presented as invented news");
 assert.ok(!page.includes("dangerouslySetInnerHTML"), "Untrusted content must remain React-escaped");
+assert.ok(page.includes("window.AudioContext"), "Missing Web Audio button feedback");
+assert.ok(page.includes("lucky_sound_enabled"), "Sound preference must persist on the device");
+assert.ok(page.includes('data-sound-toggle="true"'), "Missing accessible sound toggle");
+assert.ok(css.includes(".tap-burst"), "Missing visual tap effect");
 assert.ok(css.includes("@media (prefers-reduced-motion: reduce)"), "Missing reduced-motion support");
 assert.equal(manifest.display, "standalone", "PWA should open as a standalone app");
 assert.ok(hosting.project_id.startsWith("appgprj_"), "Missing Sites project binding");
@@ -41,4 +45,4 @@ assert.ok(viteConfig.includes("cloudflare({"), "Missing Cloudflare Worker build 
 assert.equal(wrangler.main, "vinext/server/app-router-entry", "Missing vinext Worker entry");
 assert.equal(wrangler.name, "server", "Sites Worker output must use the server target");
 
-console.log("Smoke checks passed: 6 menus, disclosures, PWA, accessibility, and Worker hosting config.");
+console.log("Smoke checks passed: 6 menus, sound effects, disclosures, PWA, accessibility, and Worker hosting config.");
