@@ -475,6 +475,112 @@ select:focus-visible {
   }
 }
 
+.voice-guide {
+  display: grid;
+  grid-template-columns: 50px minmax(0, 1fr) auto;
+  margin: 0 0 21px;
+  padding: 13px 14px;
+  align-items: center;
+  gap: 11px;
+  border: 1px solid rgba(103, 232, 249, 0.27);
+  border-radius: 20px;
+  background:
+    linear-gradient(145deg, rgba(34, 211, 238, 0.09), rgba(139, 92, 246, 0.1)),
+    rgba(11, 5, 35, 0.68);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.08), 0 10px 28px rgba(0, 0, 0, 0.18);
+}
+
+.voice-guide.has-error {
+  border-color: rgba(251, 113, 133, 0.42);
+  background:
+    linear-gradient(145deg, rgba(251, 113, 133, 0.1), rgba(139, 92, 246, 0.08)),
+    rgba(11, 5, 35, 0.72);
+}
+
+.voice-guide-icon {
+  position: relative;
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid rgba(103, 232, 249, 0.34);
+  border-radius: 16px;
+  color: #fff;
+  background: rgba(34, 211, 238, 0.1);
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.voice-guide-icon span {
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgba(103, 232, 249, 0.45);
+  border-radius: 11px;
+  opacity: 0;
+}
+
+.voice-guide.speaking .voice-guide-icon span,
+.voice-guide.starting .voice-guide-icon span {
+  animation: voice-pulse 1s ease-out infinite;
+}
+
+.voice-guide.has-error .voice-guide-icon {
+  border-color: rgba(251, 113, 133, 0.46);
+  color: #fecdd3;
+  background: rgba(251, 113, 133, 0.1);
+}
+
+.voice-guide-copy {
+  min-width: 0;
+}
+
+.voice-guide-copy strong,
+.voice-guide-copy p {
+  display: block;
+  margin: 0;
+}
+
+.voice-guide-copy strong {
+  color: #e9fbff;
+  font-size: 13px;
+}
+
+.voice-guide-copy p {
+  margin-top: 2px;
+  color: #aca5c1;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.voice-test-button {
+  min-height: 40px;
+  padding: 7px 11px;
+  border: 1px solid rgba(247, 203, 103, 0.42);
+  border-radius: 12px;
+  color: #382000;
+  background: linear-gradient(180deg, #ffe8a5, #eeb84b);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.66);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.voice-test-button:hover {
+  filter: brightness(1.08);
+}
+
+@keyframes voice-pulse {
+  from {
+    opacity: 0.82;
+    transform: scale(0.75);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.75);
+  }
+}
+
 .home-heading,
 .section-title-row {
   display: flex;
@@ -1642,6 +1748,15 @@ select.input-control option {
 
   .topbar-title strong {
     font-size: 16px;
+  }
+
+  .voice-guide {
+    grid-template-columns: 46px minmax(0, 1fr);
+  }
+
+  .voice-test-button {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 
   .hero {
