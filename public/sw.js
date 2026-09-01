@@ -1,4 +1,4 @@
-const CACHE = "ai-hailekded-v1";
+const CACHE = "ai-hailekded-v2";
 const CORE = ["/", "/manifest.json", "/favicon.svg"];
 
 self.addEventListener("install", (event) => {
