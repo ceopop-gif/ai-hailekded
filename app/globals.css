@@ -497,6 +497,13 @@ select:focus-visible {
     rgba(11, 5, 35, 0.72);
 }
 
+.voice-guide.line-browser {
+  border-color: rgba(74, 222, 128, 0.42);
+  background:
+    linear-gradient(145deg, rgba(34, 197, 94, 0.13), rgba(6, 78, 59, 0.12)),
+    rgba(11, 5, 35, 0.76);
+}
+
 .voice-guide-icon {
   position: relative;
   display: grid;
@@ -528,6 +535,14 @@ select:focus-visible {
   border-color: rgba(251, 113, 133, 0.46);
   color: #fecdd3;
   background: rgba(251, 113, 133, 0.1);
+}
+
+.voice-guide.line-browser .voice-guide-icon {
+  border-color: rgba(74, 222, 128, 0.46);
+  color: #d9ffe7;
+  background: rgba(34, 197, 94, 0.14);
+  font-size: 10px;
+  letter-spacing: 0.04em;
 }
 
 .voice-guide-copy {
@@ -566,6 +581,36 @@ select:focus-visible {
   cursor: pointer;
 }
 
+.voice-guide-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.external-browser-button {
+  display: inline-flex;
+  min-height: 40px;
+  padding: 7px 11px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(74, 222, 128, 0.5);
+  border-radius: 12px;
+  color: #eafff0;
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.3), rgba(21, 128, 61, 0.26));
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.external-browser-button:hover {
+  border-color: rgba(134, 239, 172, 0.76);
+  filter: brightness(1.08);
+}
+
 .voice-test-button:hover {
   filter: brightness(1.08);
 }
@@ -578,6 +623,23 @@ select:focus-visible {
   to {
     opacity: 0;
     transform: scale(1.75);
+  }
+}
+
+@media (max-width: 560px) {
+  .voice-guide {
+    grid-template-columns: 46px minmax(0, 1fr);
+  }
+
+  .voice-guide-actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .voice-test-button,
+  .external-browser-button {
+    width: 100%;
   }
 }
 
@@ -1151,6 +1213,102 @@ select.input-control option {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.reason-panel {
+  position: relative;
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid rgba(103, 232, 249, 0.24);
+  border-radius: 18px;
+  background:
+    linear-gradient(145deg, rgba(34, 211, 238, 0.07), rgba(139, 92, 246, 0.08)),
+    rgba(5, 2, 20, 0.32);
+}
+
+.reason-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.reason-heading h4 {
+  margin: 2px 0 0;
+  color: #f4efff;
+  font-size: 17px;
+}
+
+.evidence-badge {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border: 1px solid rgba(103, 232, 249, 0.3);
+  border-radius: 999px;
+  color: #bdf8ff;
+  background: rgba(34, 211, 238, 0.09);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.reason-source {
+  margin: 11px 0 0;
+  color: #c8bedc;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.reason-list {
+  display: grid;
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.reason-row {
+  padding: 11px 12px;
+  border-left: 3px solid rgba(247, 203, 103, 0.62);
+  border-radius: 0 12px 12px 0;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.reason-row strong,
+.reason-row p {
+  display: block;
+  margin: 0;
+}
+
+.reason-row strong {
+  color: #fff1bd;
+  font-size: 13px;
+}
+
+.reason-row p {
+  margin-top: 4px;
+  color: #bcb2cf;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.reason-limitation {
+  margin: 12px 0 0;
+  padding-top: 11px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.12);
+  color: #aaa0bf;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.history-card .history-reason {
+  margin-top: 8px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  color: #c9bfdc;
+  background: rgba(103, 232, 249, 0.06);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.history-card .history-reason strong {
+  color: #dffcff;
+}
+
 .number-chips {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1158,7 +1316,7 @@ select.input-control option {
 }
 
 .number-chips.compact {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .number-chips span {
@@ -1748,15 +1906,6 @@ select.input-control option {
 
   .topbar-title strong {
     font-size: 16px;
-  }
-
-  .voice-guide {
-    grid-template-columns: 46px minmax(0, 1fr);
-  }
-
-  .voice-test-button {
-    grid-column: 1 / -1;
-    width: 100%;
   }
 
   .hero {
