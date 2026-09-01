@@ -1,0 +1,18 @@
+{
+  "name": "AI ให้เลขเด็ด",
+  "short_name": "ให้เลขเด็ด",
+  "description": "ระบบทำนายเลขเพื่อความบันเทิงและความเชื่อส่วนบุคคล",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#08031e",
+  "theme_color": "#4c1d95",
+  "lang": "th",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
